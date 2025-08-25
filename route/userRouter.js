@@ -96,8 +96,10 @@ const identifyUser =async(req,res)=>{
     const users=await prisma.user.findMany();
     const emailExists=users.some(user => user.email===req.body.email);    
     const phoneNumberExist=users.some(user=> user.phoneNumber===req.body.phoneNumber);
-
+    let phoneNumberList=null;
+    let emailList=null;
     let linkedrecord=null;
+    
     
     const findPrimaryRecord = async (title, value)=>{
         let primary=await prisma.user.findFirst({
@@ -108,9 +110,30 @@ const identifyUser =async(req,res)=>{
         });
 
         if(primary) {
+
+         const  user=await prisma.user.findMany({
+                where:{
+                    linkedId:primary.id
+                },
+                orderBy:{
+                    id:"asc"
+                }
+            })
+
+            emailList=user.map(user=>user.email);
+            emailList.push(req.body.email);
+            console.log(emailList);
+            phoneNumberList=user.map(user=>user.phoneNumber);
+            phoneNumberList.push(req.body.phoneNumber);
+            console.log(phoneNumberList);
+            const uniqueEmailsSet= new Set(emailList)
+            const uniquePhoneNumberSet = new Set(phoneNumberList)
+            console.log(uniqueEmailsSet);
+            console.log(uniquePhoneNumberSet);
+
             return primary;
         }
-
+       
         const secondary=await prisma.user.findFirst({
             where:{
                 [title]:value,
@@ -157,7 +180,7 @@ const identifyUser =async(req,res)=>{
         user:newUser
     })
 
-
+//if found email
     
 }
 
