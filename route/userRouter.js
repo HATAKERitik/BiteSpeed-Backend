@@ -110,7 +110,6 @@ const identifyUser =async(req,res)=>{
         });
 
         if(primary) {
-
          const  user=await prisma.user.findMany({
                 where:{
                     linkedId:primary.id
@@ -119,16 +118,16 @@ const identifyUser =async(req,res)=>{
                     id:"asc"
                 }
             })
-
+            //For email response
             emailList=user.map(user=>user.email);
             emailList.push(req.body.email);
-            console.log(emailList);
+            const uniqueEmailsSet= new Set(emailList)
+            console.log(uniqueEmailsSet);
+
+            // For Phone response
             phoneNumberList=user.map(user=>user.phoneNumber);
             phoneNumberList.push(req.body.phoneNumber);
-            console.log(phoneNumberList);
-            const uniqueEmailsSet= new Set(emailList)
-            const uniquePhoneNumberSet = new Set(phoneNumberList)
-            console.log(uniqueEmailsSet);
+            const uniquePhoneNumberSet = new Set(phoneNumberList)            
             console.log(uniquePhoneNumberSet);
 
             return primary;
@@ -141,11 +140,56 @@ const identifyUser =async(req,res)=>{
             }
         });
         if(secondary){
-            return await prisma.user.findUnique({
+            const primaryId = secondary.linkedId;
+             const  user=await prisma.user.findMany({
+                where:{
+                    OR:[
+                        { linkedId:primaryId},
+                        { id:primaryId}                       
+                   ]
+                },
+                orderBy:{
+                    id:"asc"
+                }
+            })
+           console.log(user);
+              //For email response
+            emailList=user.map(user=>user.email);
+            if (!emailList.includes(req.body.email)) {
+                    emailList.push(req.body.email);
+                }           
+            const uniqueEmails=[]
+            for (const email of emailList){
+                if(!uniqueEmails.includes(email)){
+                    uniqueEmails.push(email);
+                }
+            }
+            //const uniqueEmailsSet= new Set(emailList)
+            //console.log(uniqueEmailsSet);
+
+            // For Phone response
+            phoneNumberList=user.map(user=>user.phoneNumber);
+            if(!phoneNumberList.includes(req.body.phoneNumber)){
+                phoneNumberList.push(req.body.phoneNumber);
+            }
+            const uniquePhoneNumbers=[];
+            for (const phone of phoneNumberList){
+                if(!uniquePhoneNumbers.includes(phone)){
+                    uniquePhoneNumbers.push(phone);
+                }
+            }
+            console.log(uniqueEmails);
+            console.log(uniquePhoneNumbers);
+            
+            //const uniquePhoneNumberSet = new Set(phoneNumberList)            
+            //console.log(uniquePhoneNumberSet);
+
+
+            return  await prisma.user.findUnique({
                 where:{
                     id:secondary.linkedId
                 }
-            })
+            });
         }
         return null;
     };
